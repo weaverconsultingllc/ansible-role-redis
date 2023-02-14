@@ -1,5 +1,26 @@
 ---
+
+- name: Add packages key
+  ansible.builtin.apt_key:
+    url: https://packages.redis.io/gpg
+    keyring: /usr/share/keyrings/redis-archive-keyring.gpg
+    state: present
+  become: true
+
+- name: Get apt source
+  ansible.builtin.apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb jammy main"
+    state: present
+  become: true
+
+- name: Update and upgrade apt packages
+  apt:
+    upgrade: yes
+    update_cache: yes
+    cache_valid_time: 86400
+
 - name: Ensure Redis is installed.
   apt:
     name: "{{ redis_package }}"
     state: present
+  become: true
