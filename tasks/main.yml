@@ -1,35 +1,62 @@
 ---
+
+- name: Show all facts detected
+  ansible.builtin.debug:
+    var: ansible_facts
+    verbosity: 1
+
+- name: Check for Amazon Linux aarch64
+  ansible.builtin.set_fact:
+    ansible_os_family: "{{ ansible_facts.distribution }}{{ ansible_facts.architecture }}"
+    verbosity: 1
+  when: ansible_facts.distribution == 'Amazon' and ansible_facts.architecture == 'aarch64'
+
+- name: Show the archtecture detected
+  ansible.builtin.debug:
+    var: ansible_os_family
+
 # Variable setup.
 - name: Include OS-specific variables.
-  include_vars: "{{ ansible_os_family }}.yml"
+  ansible.builtin.include_vars: "{{ ansible_os_family }}.yml"
 
 - name: Define redis_package.
-  set_fact:
+  ansible.builtin.set_fact:
     redis_package: "{{ __redis_package }}"
   when: redis_package is not defined
 
 - name: Ensure Redis configuration dir exists.
-  file:
+  ansible.builtin.file:
     path: "{{ redis_conf_path | dirname }}"
     state: directory
     mode: 0755
 
 - name: Ensure Redis is configured.
-  template:
+  ansible.builtin.template:
     src: redis.conf.j2
     dest: "{{ redis_conf_path }}"
     mode: "{{ redis_conf_mode }}"
   notify: restart redis
 
 # Setup/install tasks.
-- include_tasks: setup-RedHat.yml
+- name: RedHat detected.  Run RedHat specific tasks.
+  ansible.builtin.include_tasks: setup-RedHat.yml
   when: ansible_os_family == 'RedHat'
 
-- include_tasks: setup-Debian.yml
+- name: Debian detected.  Run Debian specific tasks.
+  ansible.builtin.include_tasks: setup-Debian.yml
   when: ansible_os_family == 'Debian'
 
-- include_tasks: setup-Archlinux.yml
+- name: ArchLinux detected.  Run ArchLinux specific tasks.
+  ansible.builtin.include_tasks: setup-Archlinux.yml
   when: ansible_os_family == 'Archlinux'
 
+- name: Amazon ArchLinux64 detected.  Run Amazon ArchLinux64 specific tasks.
+  ansible.builtin.include_tasks: setup-AmazonArch64.yml
+  when: ansible_os_family == 'Amazonaarch64'
+
 - name: Ensure Redis is running and enabled on boot.
-  service: "name={{ redis_daemon }} state=started enabled=yes"
+  ansible.builtin.service: 
+    name: "{{ redis_daemon }}"
+    state: started
+    enabled: yes
+
