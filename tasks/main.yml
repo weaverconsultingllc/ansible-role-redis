@@ -3,13 +3,6 @@
 - name: Show all facts detected
   ansible.builtin.debug:
     var: ansible_facts
-    verbosity: 1
-
-- name: Check for Amazon Linux aarch64
-  ansible.builtin.set_fact:
-    ansible_os_family: "{{ ansible_facts.distribution }}{{ ansible_facts.architecture }}"
-    verbosity: 1
-  when: ansible_facts.distribution == 'Amazon' and ansible_facts.architecture == 'aarch64'
 
 - name: Show the archtecture detected
   ansible.builtin.debug:
@@ -32,7 +25,7 @@
 
 - name: Ensure Redis is configured.
   ansible.builtin.template:
-    src: redis.conf.j2
+    src: redis6.conf.j2
     dest: "{{ redis_conf_path }}"
     mode: "{{ redis_conf_mode }}"
   notify: restart redis
@@ -52,10 +45,10 @@
 
 - name: Amazon ArchLinux64 detected.  Run Amazon ArchLinux64 specific tasks.
   ansible.builtin.include_tasks: setup-AmazonArch64.yml
-  when: ansible_os_family == 'Amazonaarch64'
+  when: ansible_facts.distribution == 'Amazon' and ansible_facts.architecture == 'aarch64'
 
 - name: Ensure Redis is running and enabled on boot.
-  ansible.builtin.service: 
+  ansible.builtin.service:
     name: "{{ redis_daemon }}"
     state: started
     enabled: yes
